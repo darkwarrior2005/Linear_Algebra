@@ -16,25 +16,40 @@ streamlit run app.py          # or:  python run.py
 The app opens in your browser at <http://localhost:8501>.
 Press **▶ Play** under a plot to animate it. Drag to rotate 3D views and scroll to zoom.
 
-## What's inside
+## One graph, everything on it
 
-| Section | Page | What you can do |
-|---|---|---|
-| **Vectors & matrices** | Vectors | Add, scale and combine arrows tip-to-tail. Show span (line/plane/space) and linear independence. Show dot product, projection, angle, cross product and parallelogram area. |
-| | Linear transformations | Animate any 2×2 / 3×3 matrix acting on the grid, the unit square/cube, the unit circle/sphere and your own vector. Shows det, rank and a plain-language description (rotation, shear, projection…). |
-| | Composition & inverse | Watch *B then A* (= AB) step by step and see that AB ≠ BA. A⁻¹ undoes A. Compare A with Aᵀ. |
-| | Systems Ax = b | Row picture (lines/planes meeting), column picture (mixing columns to reach b), least squares when there is no solution, and row reduction step by step. |
-| | Subspaces & rank | Column space, null space, row space, left null space, rank–nullity, and a cloud of points being squashed. |
-| | Change of basis | Coordinates in a new basis with its own grid, the same map in another basis (B⁻¹AB), and a one-click eigenbasis. |
-| | Gram–Schmidt & projections | Orthogonalisation step by step (→ QR), and projection onto a line/plane with the error vector. |
-| **Eigen & decompositions** | Eigenvectors & eigenvalues | A fan of test vectors: only the eigenvectors stay on their lines. Hunt for eigen-directions by hand, run the power method, plot the characteristic polynomial and see complex eigenvalues. |
-| | Decompositions | SVD (rotate → stretch → rotate), eigendecomposition PDP⁻¹, polar QS, QR and LU, each animated as a sequence of simple moves. |
-| | Matrix calculator | Any size: det, inverse, RREF with every row operation, eigen, SVD, QR, LU, null/column space, Aⁿ, e^A, pseudo-inverse, norms, solve Ax = b, and a picture for 2×2/3×3 matrices. |
-| **Fields & time evolution** | Vector fields | Type **F(x, y, z, t)**. Draw arrows coloured by strength and streamlines over a magnitude/divergence/curl background. Time-dependent fields animate. Divergence, curl and the Jacobian are worked out symbolically. |
-| | Differential operators | **Gradient** (contours + 3D surface + directional derivative), **divergence** (flux through a probe circle/sphere), **curl** (a spinning paddle wheel), **Laplacian** (neighbour average), the **Jacobian** as the local linear map, and checks of curl(∇f) = 0 and div(curl F) = 0. |
-| | Flows & particles | Release particles (grid, random, a blob of fluid, a line, your own points) into any field, including time-dependent ones, and watch them move with trails. Tracks the blob's area and finds and classifies fixed points. |
-| | Linear dynamics x′ = Ax | Phase portraits, eigen-lines, a trace–determinant map, and space flowing under e^{tA}. Eigenvalues are read off as growth, decay and oscillation. |
-| | Motion along a curve r(t) | Animated position, velocity, acceleration, Frenet frame T-N-B, osculating circle, speed, curvature and torsion. |
+The app is a single workspace: **one large graph** in the middle, a **control panel** on the left,
+and the **legend and all numbers underneath** the graph, so nothing covers the picture.
+Every feature is a layer you switch on in the control panel. Layers combine, so you can, for example,
+watch particles flow through a field while a matrix rotates the grid and your vectors.
+
+| Layer (control panel) | What it adds to the graph |
+|---|---|
+| 🔀 **Matrix / transformation** | Applies a 2×2 / 3×3 matrix A to the whole space: grid, unit square/cube, unit circle/sphere, basis arrows, fan of unit vectors. Can play A as one smooth move or split into SVD (rotate → stretch → rotate), eigen (P⁻¹ → D → P), polar, QR or LU. Can compose with a second matrix B and finish with the inverse (undo). |
+| ➡️ **Vectors** | Any number of vectors (an editable table). They ride along with the transformation. Optional: sum (tip-to-tail), linear combination with sliders, span, projection, cross product, Gram–Schmidt, power method, coordinates in another basis. |
+| 🌟 **Eigenvectors & subspaces** | Eigenvector lines plus the column space, null space, row space and left null space of A. |
+| 🎯 **Equations Ax = b** | Row picture (lines/planes), column picture (mixing columns to reach b), the solution, or the least-squares best fit. |
+| 🧭 **Another basis B** | B's grid and basis vectors (one click to use A's eigenvectors). |
+| 🌬️ **Vector field F(x, y, z, t)** | Your formula, or the matrix itself (F = A·x). Arrows coloured by strength, streamlines, and a background coloured by strength, divergence or curl. Time-dependent fields animate. |
+| ⛰️ **Scalar function f** | Level sets / isosurfaces and gradient arrows. |
+| 🌊 **Particles** | A blob, grid, random cloud or line of particles carried by the field over time, with trails; the blob shows how area changes; fixed points can be marked and classified. |
+| 🔍 **Probe** | A point where you see flux in/out (divergence), a spinning paddle wheel (curl), the Jacobian's eigen-directions with a deformed little square, and ∇f. |
+| 🛰️ **Moving point r(t)** | A curve with the moving point, velocity, acceleration, the T-N-B frame and the osculating circle. |
+| ⏱️ **Time** | Time range, frames, and "let all of space flow with x′ = Ax" (the grid moves by e^{tA}). |
+
+**▶ Play** animates either *the matrix* (step by step) or *time* (fields, particles, curve, probe).
+*auto* chooses time when something time-based is switched on.
+
+**Smooth transformations.** A matrix is grown out of the identity along its natural path, e^{tL} with
+e^L = A. Rotations turn rigidly instead of shrinking, shears slide, and stretches grow. Matrices
+without a real logarithm (reflections, projections, half-turns) are split into a rotation that turns
+and a stretch that slides, where any flip or squash happens.
+
+Under the graph, info cards show det, rank, trace, a plain-language description, the eigenvalue
+table, the characteristic polynomial, vector lengths, dot products and angles, the solution of Ax = b
+with every row-reduction step, subspace bases, symbolic divergence and curl, fixed points, the probe's
+F, div, curl and Jacobian, and the curve's speed and curvature.
+A **matrix calculator** for any size sits at the bottom. It can send a 2×2/3×3 result to the graph.
 
 ## Typing formulas
 
@@ -46,29 +61,31 @@ Press **▶ Play** under a plot to animate it. Drag to rotate 3D views and scrol
 
 ### Example: your own time-dependent field
 
-On **Flows & particles**, pick *(custom)* and type
+Open **🌬️ Vector field**, switch it on, pick *(custom)* and type
 
 ```
 Fx = -y + 0.5*sin(t)
 Fy =  x - 0.2*y
 ```
 
-Then choose *blob* as the starting positions and press ▶ Play. The blob of fluid is carried, stretched
+Then switch on **🌊 Particles** (start as *blob*) and press ▶ Play. The blob of fluid is carried, stretched
 and rotated by the field as it changes over time.
 
 ## Project layout
 
 ```
-app.py                  Streamlit entry point (sidebar navigation)
-run.py                  `python run.py` launcher
+app.py                    Streamlit entry point
+run.py                    `python run.py` launcher
 linalg_viz/
-  core/parsing.py       safe expression / matrix parser
-  core/linalg.py        eigen, RREF, solve, subspaces, Gram–Schmidt, LU/QR/SVD, e^A …
-  core/fields.py        vector/scalar fields, div/curl/grad/Laplacian, RK4 flows, fixed points, r(t)
-  viz/plot.py           Plotly arrows, grids, shapes, quivers and animation helpers (2D & 3D)
-  viz/scenes.py         reusable "space being transformed" animations
-  pages/*.py            one module per page
-tests/                  unit tests for the maths + smoke tests rendering every page
+  core/parsing.py         safe expression / matrix parser
+  core/linalg.py          eigen, RREF, solve, subspaces, Gram–Schmidt, LU/QR/SVD, e^A, log A, smooth paths
+  core/fields.py          vector/scalar fields, div/curl/grad/Laplacian, RK4 flows, fixed points, r(t)
+  viz/plot.py             Plotly arrows, grids, shapes, quivers and animation helpers (2D & 3D)
+  workspace/controls.py   the control panel → Settings
+  workspace/scene.py      every layer of the single graph + animation frames
+  workspace/panels.py     legend chips and info cards (outside the graph)
+  workspace/calculator.py matrix calculator for any size
+tests/                    unit tests for the maths + smoke tests switching on every layer and option
 ```
 
 Run the tests with `pip install pytest && pytest`.

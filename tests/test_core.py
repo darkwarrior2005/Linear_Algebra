@@ -147,3 +147,35 @@ def test_curve_kinematics_helix():
     assert k["curvature"][0] == pytest.approx(0.5, rel=1e-4)
     assert k["torsion"][0] == pytest.approx(0.5, rel=1e-3)
     assert np.dot(k["T"][0], k["N"][0]) == pytest.approx(0, abs=1e-6)
+
+
+# ------------------------------------------------------------- animation paths
+
+@pytest.mark.parametrize("A", [
+    [[0, -1], [1, 0]],                                   # 90° rotation
+    [[-1, 0], [0, -1]],                                  # 180° rotation (no real log)
+    [[0, 0, 1], [1, 0, 0], [0, 1, 0]],                   # 120° turn about (1,1,1)
+    [[1, 0, 0], [0, -1, 0], [0, 0, -1]],                 # 180° about x
+])
+def test_rotations_turn_without_shrinking(A):
+    A = np.array(A, float)
+    path = la.transform_path(A)
+    assert np.allclose(path(0), np.eye(len(A))) and np.allclose(path(1), A, atol=1e-8)
+    for t in np.linspace(0, 1, 11):
+        M = path(t)
+        assert np.allclose(M.T @ M, np.eye(len(A)), atol=1e-8)  # every frame is a rigid rotation
+
+
+def test_paths_for_shear_reflection_projection():
+    shear = np.array([[1, 1], [0, 1]], float)
+    assert np.allclose(la.transform_path(shear)(0.5), [[1, 0.5], [0, 1]])
+    for A in ([[0, 1], [1, 0]], [[1, 0], [0, 0]], [[1, -1], [1, 1]], [[1, 2], [0.5, 1]]):
+        A = np.array(A, float)
+        path = la.transform_path(A)
+        assert np.allclose(path(0), np.eye(2)) and np.allclose(path(1), A, atol=1e-8)
+
+
+def test_real_log():
+    A = np.array([[2, 1], [1, 2]], float)
+    assert np.allclose(la.matrix_exp(la.real_log(A)), A)
+    assert la.real_log(np.array([[1, 0], [0, -1]], float)) is None

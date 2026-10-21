@@ -441,7 +441,7 @@ def animated_figure(make_traces: Callable[[float], list], ts: Iterable[float], l
     frame_args = lambda d: dict(frame=dict(duration=d, redraw=redraw), mode="immediate",  # noqa: E731
                                 transition=dict(duration=0), fromcurrent=True)
     fig.update_layout(
-        updatemenus=[dict(type="buttons", direction="left", x=1.0, y=1.0, xanchor="right", yanchor="bottom",
+        updatemenus=[dict(type="buttons", direction="left", x=0.0, y=1.0, xanchor="left", yanchor="bottom",
                           pad=dict(r=8, t=8), showactive=False, bgcolor="#262730", font=dict(color="#fafafa"),
                           buttons=[dict(label="▶ Play", method="animate", args=[None, frame_args(duration)]),
                                    dict(label="⏸ Pause", method="animate",

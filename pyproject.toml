@@ -11,7 +11,7 @@ dependencies = ["numpy>=1.24", "plotly>=5.18", "streamlit>=1.40", "sympy>=1.12"]
 dev = ["pytest>=7"]
 
 [tool.setuptools]
-packages = ["linalg_viz", "linalg_viz.core", "linalg_viz.viz", "linalg_viz.pages"]
+packages = ["linalg_viz", "linalg_viz.core", "linalg_viz.viz", "linalg_viz.workspace"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

@@ -7,12 +7,11 @@ import streamlit as st
 
 from ..core import linalg as la
 from ..core.parsing import ExpressionError, matrix_to_latex, parse_matrix, vector_to_latex
-from ..ui import fmt, header, latex_matrix, show
-from ..viz.scenes import SceneOptions, linear_path, transform_figure
+from ..ui import fmt, latex_matrix, set_matrix
 
 ONE = ["determinant", "inverse", "transpose", "rank", "trace", "RREF (row reduction)", "eigenvalues & eigenvectors",
        "SVD", "QR", "LU", "null space", "column space", "power Aⁿ", "matrix exponential e^A", "pseudo-inverse A⁺",
-       "norms & condition number", "characteristic polynomial", "k · A", "visualize as a transformation"]
+       "norms & condition number", "characteristic polynomial", "k · A"]
 TWO = ["A + B", "A − B", "A · B", "B · A", "solve A x = B (B = right side)", "A ⊙ B (entry-wise)"]
 
 
@@ -31,7 +30,7 @@ def _one(op: str, A: np.ndarray) -> None:
     m, n = A.shape
     square = m == n
     need_square = {"determinant", "inverse", "trace", "eigenvalues & eigenvectors", "power Aⁿ",
-                   "matrix exponential e^A", "characteristic polynomial", "visualize as a transformation"}
+                   "matrix exponential e^A", "characteristic polynomial"}
     if op in need_square and not square:
         st.error(f"'{op}' needs a square matrix (this one is {m}×{n}).")
         return
@@ -110,12 +109,6 @@ def _one(op: str, A: np.ndarray) -> None:
     elif op == "k · A":
         k = st.number_input("k", value=2.0, key="calc_k")
         latex_matrix(k * A, f"{fmt(k)}A = ")
-    elif op.startswith("visualize"):
-        if n not in (2, 3):
-            st.error("Pictures are available for 2×2 and 3×3 matrices.")
-            return
-        show(transform_figure(n, linear_path(A), np.linspace(0, 1, 25),
-                              SceneOptions(span=4 if n == 2 else 3, circle=n == 2)), key="calc_vis")
 
 
 def _two(op: str, A: np.ndarray, B: np.ndarray) -> None:
@@ -145,8 +138,15 @@ def _two(op: str, A: np.ndarray, B: np.ndarray) -> None:
         st.error(f"Sizes do not fit: A is {A.shape[0]}×{A.shape[1]}, B is {B.shape[0]}×{B.shape[1]} ({exc}).")
 
 
+def _send_to_graph(A: np.ndarray) -> None:
+    n = A.shape[0]
+    st.session_state["ws_dim"] = f"{n}D"
+    set_matrix("ws_A", A)
+    st.session_state["ws_tf_on"] = True
+
+
 def render() -> None:
-    header("Matrix calculator", "Any size. Type rows on separate lines.")
+    """Calculator for matrices of any size (shown under the graph)."""
     a, b = st.columns(2)
     with a:
         A = _read("Matrix A", "calc_A", "2 1 0\n1 3 1\n0 1 4")
@@ -155,17 +155,16 @@ def render() -> None:
     if A is None:
         return
     st.caption(f"A is {A.shape[0]}×{A.shape[1]}" + (f", B is {B.shape[0]}×{B.shape[1]}" if B is not None else ""))
-    t1, t2 = st.tabs(["One matrix (A)", "Two matrices (A, B)"])
-    with t1:
-        ops = st.multiselect("Operations", ONE, default=["determinant", "rank", "inverse",
-                                                         "eigenvalues & eigenvectors"], key="calc_ops")
-        for op in ops:
-            st.markdown(f"#### {op}")
+    if A.shape[0] == A.shape[1] and A.shape[0] in (2, 3):
+        st.button("Show this A on the graph", key="calc_send", on_click=_send_to_graph, args=(A,))
+    ops = st.multiselect("Operations", ONE + TWO, default=["determinant", "rank", "inverse",
+                                                           "eigenvalues & eigenvectors"], key="calc_ops")
+    for op in ops:
+        st.markdown(f"#### {op}")
+        if op in TWO:
+            if B is None:
+                st.error("This needs matrix B.")
+            else:
+                _two(op, A, B)
+        else:
             _one(op, A)
-    with t2:
-        if B is None:
-            return
-        ops2 = st.multiselect("Operations", TWO, default=["A · B", "solve A x = B (B = right side)"], key="calc_ops2")
-        for op in ops2:
-            st.markdown(f"#### {op}")
-            _two(op, A, B)

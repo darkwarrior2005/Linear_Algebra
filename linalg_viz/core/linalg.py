@@ -24,6 +24,96 @@ def interpolate_matrix(A: np.ndarray, t: float) -> np.ndarray:
     return (1 - t) * np.eye(n) + t * A
 
 
+def _sqrtm(A: np.ndarray, iters: int = 60) -> np.ndarray:
+    """Principal square root by the Denman–Beavers iteration."""
+    Y, Z = A.astype(float), np.eye(A.shape[0])
+    for _ in range(iters):
+        Y_next = 0.5 * (Y + np.linalg.inv(Z))
+        Z = 0.5 * (Z + np.linalg.inv(Y))
+        if np.allclose(Y_next, Y, atol=1e-14, rtol=1e-13):
+            return Y_next
+        Y = Y_next
+    return Y
+
+
+def real_log(A: np.ndarray) -> np.ndarray | None:
+    """Real principal matrix logarithm, or ``None`` when A has none.
+
+    A real logarithm L (with e^L = A) exists when A has no eigenvalue on the closed
+    negative real axis.  Then t ↦ e^{tL} is the most natural way to "grow" A out
+    of the identity: rotations turn, shears slide, stretches grow exponentially.
+    """
+    n = A.shape[0]
+    ev = np.linalg.eigvals(A)
+    if np.any(np.abs(ev) < 1e-9) or np.any((ev.real <= 0) & (np.abs(ev.imag) < 1e-9)):
+        return None
+    try:
+        X, k = A.astype(float), 0
+        while np.linalg.norm(X - np.eye(n), ord=2) > 0.2 and k < 40:
+            X, k = _sqrtm(X), k + 1
+        E = X - np.eye(n)
+        L, term = np.zeros_like(E), np.eye(n)
+        for j in range(1, 40):
+            term = term @ E
+            L = L + ((-1) ** (j + 1)) * term / j
+        L = L * 2 ** k
+    except np.linalg.LinAlgError:
+        return None
+    if not np.all(np.isfinite(L)) or not np.allclose(matrix_exp(L), A, atol=1e-7, rtol=1e-6):
+        return None
+    return L
+
+
+def rotation_power(R: np.ndarray, t: float) -> np.ndarray:
+    """Rᵗ for a proper rotation: the same turn, t times as far (works through 180°)."""
+    n = R.shape[0]
+    if n == 2:
+        th = t * np.arctan2(R[1, 0], R[0, 0])
+        return np.array([[np.cos(th), -np.sin(th)], [np.sin(th), np.cos(th)]])
+    if n == 3:
+        th = float(np.arccos(np.clip((np.trace(R) - 1) / 2, -1, 1)))
+        if th < 1e-10:
+            return np.eye(3)
+        if np.sin(th) < 1e-4:  # (almost) a half turn: axis is the fixed direction
+            axis = null_space(R - np.eye(3), tol=1e-4)[:, 0]
+        else:
+            axis = np.array([R[2, 1] - R[1, 2], R[0, 2] - R[2, 0], R[1, 0] - R[0, 1]]) / (2 * np.sin(th))
+        axis = axis / np.linalg.norm(axis)
+        K = np.array([[0, -axis[2], axis[1]], [axis[2], 0, -axis[0]], [-axis[1], axis[0], 0]])
+        a = t * th
+        return np.eye(3) + np.sin(a) * K + (1 - np.cos(a)) * K @ K
+    return interpolate_matrix(R, t)
+
+
+def transform_path(A: np.ndarray):
+    """A smooth path M(t) from I (t=0) to A (t=1) that rotates instead of shrinking.
+
+    * If A has a real logarithm L: M(t) = e^{tL} (rotations turn rigidly, shears slide,
+      rotation+scaling spirals).
+    * Otherwise (reflections, projections, 180° turns…): polar split A = R·S into a
+      rotation R (turned with :func:`rotation_power`) and a stretch S (slid linearly,
+      which is where any flip or squash happens).
+    """
+    A = np.asarray(A, float)
+    n = A.shape[0]
+    I = np.eye(n)
+    L = real_log(A)
+    if L is not None:
+        return lambda t: matrix_exp(t * L)
+    U, s, Vt = np.linalg.svd(A)
+    R = U @ Vt
+    S = Vt.T @ np.diag(s) @ Vt
+    if np.linalg.det(R) < 0:
+        # Move the mirror into the stretch: use R's own reflection normal if it has one.
+        w, V = np.linalg.eig(R)
+        k = int(np.argmin(np.abs(w + 1)))
+        v = np.real(V[:, k]) if abs(w[k] + 1) < 1e-6 else Vt[-1]
+        v = v / np.linalg.norm(v)
+        H = I - 2 * np.outer(v, v)
+        R, S = R @ H, H @ S
+    return lambda t: rotation_power(R, t) @ interpolate_matrix(S, t)
+
+
 def rank(A: np.ndarray, tol: float = 1e-8) -> int:
     if A.size == 0:
         return 0
