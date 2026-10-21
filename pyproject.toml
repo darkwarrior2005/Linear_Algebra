@@ -1,0 +1,19 @@
+[project]
+name = "linalg-viz"
+version = "1.0.0"
+description = "Interactive 2D/3D visualizer for linear algebra, vector fields and flows"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+dependencies = ["numpy>=1.24", "plotly>=5.18", "streamlit>=1.40", "sympy>=1.12"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[tool.setuptools]
+packages = ["linalg_viz", "linalg_viz.core", "linalg_viz.viz", "linalg_viz.pages"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
